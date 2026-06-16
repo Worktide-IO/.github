@@ -4,11 +4,11 @@
   <img src="https://raw.githubusercontent.com/Worktide-IO/worktide-web/main/public/brand/logo/worktide-lockup.svg" alt="Worktide" height="72" />
 </a>
 
-### Open-source project, time and CRM management.
+### Open-source project, time, CRM &amp; wiki management.
 
-A self-hostable hybrid of [awork](https://www.awork.com/) and [Redmine](https://www.redmine.org/) — multi-tenant from day one, with polymorphic comments, HMAC-signed webhooks, a granular permission matrix, real-time updates over Mercure, and a built-in CRM.
+A self-hostable hybrid of [awork](https://www.awork.com/), [Redmine](https://www.redmine.org/) and [Confluence](https://www.atlassian.com/software/confluence) — multi-tenant from day one, with polymorphic comments, HMAC-signed webhooks, a granular permission matrix, a BlockNote wiki with revision history, a workspace-wide tag system, real-time updates over Mercure, a built-in CRM, and an MCP server so AI agents can work with your projects.
 
-[**Landing page**](https://worktide-io.github.io/) · [**Backend**](https://github.com/Worktide-IO/worktide) · [**Frontend**](https://github.com/Worktide-IO/worktide-web)
+[**Landing page**](https://worktide-io.github.io/) · [**Backend**](https://github.com/Worktide-IO/worktide) · [**Frontend**](https://github.com/Worktide-IO/worktide-web) · [**MCP**](https://github.com/Worktide-IO/worktide-mcp)
 
 </div>
 
@@ -18,22 +18,33 @@ A self-hostable hybrid of [awork](https://www.awork.com/) and [Redmine](https://
 
 | Repo | What |
 |---|---|
-| [`worktide`](https://github.com/Worktide-IO/worktide) | Symfony 8 + API Platform 4 + Doctrine 3 backend. 60+ entities, JWT + Personal-Access-Token auth, HMAC-signed outbound webhooks, granular per-role permission matrix, Doctrine `onFlush` domain event log, Mercure publishing on every CRUD. |
-| [`worktide-web`](https://github.com/Worktide-IO/worktide-web) | React 19 + Vite + Refine 5 + Tailwind v4 + shadcn/ui SPA. Custom Hydra/JSON-LD data provider, OpenAPI codegen via kubb, real-time list updates over Mercure with per-user JWT. |
-| `worktide-mobile` | Flutter app — planned, focus on the active timer + quick task capture. |
+| [`worktide`](https://github.com/Worktide-IO/worktide) | Symfony 8 + API Platform 4 + Doctrine 3 backend. 60+ entities, JWT + Personal-Access-Token auth, HMAC-signed outbound webhooks, granular per-role permission matrix, BlockNote-compatible wiki with revisions, subtasks + 4 dependency types (FS/SS/FF/SF with lag), Doctrine `onFlush` domain event log, Mercure publishing on every CRUD. |
+| [`worktide-web`](https://github.com/Worktide-IO/worktide-web) | React 19 + Vite + Refine 5 + Tailwind v4 + shadcn/ui SPA. Custom Hydra/JSON-LD data provider, OpenAPI codegen via kubb, real-time list updates over Mercure with per-user JWT, BlockNote editor. |
+| [`worktide-mcp`](https://github.com/Worktide-IO/worktide-mcp) | Standalone MCP server in Node/TypeScript. 18 tools across tasks, projects, time and identity — Claude Code, Claude Desktop and any other MCP-aware client can read and mutate Worktide via a Personal Access Token. |
 
 ## Architecture in one paragraph
 
-The backend is a workspace-scoped, multi-tenant API where every entity stacks the same handful of reusable Doctrine traits (UUIDv7 + timestampable + soft-delete + workspace-scope + versioning + audit + external-reference). API Platform exposes the contract; the resource voters delegate up the aggregate chain via the `AccessDecisionManager`; a granular `Capability` × `Role` permission matrix can be overridden per workspace. Every tracked mutation lands in a single immutable `domain_events` log that drives the activity feed, the outbound HMAC-signed webhook dispatcher, and the Mercure live-update publisher. The frontend speaks the same OpenAPI contract through a typed kubb-generated client.
+The backend is a workspace-scoped, multi-tenant API where every entity stacks the same handful of reusable Doctrine traits (UUIDv7 + timestampable + soft-delete + workspace-scope + versioning + audit + external-reference). API Platform exposes the contract; the resource voters delegate up the aggregate chain via the `AccessDecisionManager`; a granular `Capability` × `Role` permission matrix can be overridden per workspace. Every tracked mutation lands in a single immutable `domain_events` log that drives the activity feed, the outbound HMAC-signed webhook dispatcher, and the Mercure live-update publisher. The frontend speaks the same OpenAPI contract through a typed kubb-generated client; the MCP server speaks the same REST API behind a Personal Access Token.
 
 ## Highlights
 
 - **Multi-tenancy** as a primitive — JWT + Personal-Access-Tokens, per-workspace permission matrix, voter-based authorization.
 - **First-class CRM** — Customer → Contact → CustomerSystem → ServiceSubscription with cents-precision billing and auto-computed next-billing dates. Departs from awork's project-scoped contacts model.
+- **Wiki with history** — BlockNote-powered editor with `/`-commands, nested pages, revision snapshots on every save. Restore any version; the restore itself is reversible.
+- **Subtasks + 4 dependency types** — self-referential parent task plus FS / SS / FF / SF with lag minutes. Cycle detection before persist; "blocked-by" badges on the board.
+- **Tag system** — workspace-wide tags scoped to project / task / customer / any, with inline create, list filters, and a colour-aware management UI.
 - **Outbound webhooks** with HMAC-SHA256 signatures, retries, delivery log, and auto-deactivation after consecutive failures.
 - **Live updates** — `mercure: true` on an entity is enough; the SPA's `useMercureTopic` hook turns SSE frames into TanStack-Query invalidations.
 - **Granular per-role permissions** — Capability enum × Role baseline matrix + per-workspace overrides. The owner role is intentionally immutable so no workspace can lock itself out.
+- **MCP for AI agents** — 18 tools (task search/create/update/complete/dependency, project board/create/archive, time start/stop/report, identity). Plug it into Claude Code and ask "stop my timer" or "make a subtask of WORK-12".
+- **Sessions + sensible defaults** — "Stay signed in" toggle, idle-logout, active-session list with one-click revocation, per-workspace access-token TTL (strictest membership wins).
 - **awork importer** ships in `worktide` — pull a representative slice via Bearer token, replicate idempotently via `(externalSource, externalId)`.
+
+## Where it's going
+
+The big bet for the next phase is a **source-agnostic InboundEvent pipeline** — Email, Slack, Voice transcripts, Monitoring alerts (Zabbix / Prometheus / Datadog), Webhooks, RSS and CVE feeds, even OCR'd letters — each normalised into a common shape, then an LLM proposes tasks, notifications or schedule shifts. The user confirms by default; auto-mode is opt-in per workspace / project / user.
+
+The recommended LLM backend per source is GDPR-aware: public feeds can use Anthropic / OpenAI directly, B2B chat stays in EU-cloud (Azure-EU / Mistral / Bedrock-EU), and voice / OCR'd legal post / health data ride strictly on on-prem Ollama. External customer mail is *always* human-in-the-loop — the auto-mode never sends to a third party without a human click.
 
 ## License
 
