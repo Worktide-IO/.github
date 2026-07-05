@@ -18,7 +18,7 @@ A self-hostable hybrid of [awork](https://www.awork.com/), [Redmine](https://www
 
 | Repo | What |
 |---|---|
-| [`worktide`](https://github.com/Worktide-IO/worktide) | Symfony 8 + API Platform 4 + Doctrine 3 backend. 60+ entities, JWT + Personal-Access-Token auth, HMAC-signed outbound webhooks, granular per-role permission matrix, BlockNote-compatible wiki with revisions, subtasks + 4 dependency types (FS/SS/FF/SF with lag), Doctrine `onFlush` domain event log, Mercure publishing on every CRUD. |
+| [`worktide`](https://github.com/Worktide-IO/worktide) | Symfony 8 + API Platform 4 + Doctrine 3 backend. 60+ entities, JWT + Personal-Access-Token auth, HMAC-signed outbound webhooks, granular per-role permission matrix, BlockNote-compatible wiki with revisions, subtasks + 4 dependency types (FS/SS/FF/SF with lag), Doctrine `onFlush` domain event log, Mercure publishing on every CRUD. Human-in-the-loop AI agents (`AIRecommendation` + pluggable `LlmProviderInterface`) and Meilisearch full-text search. |
 | [`worktide-web`](https://github.com/Worktide-IO/worktide-web) | React 19 + Vite + Refine 5 + Tailwind v4 + shadcn/ui SPA. Custom Hydra/JSON-LD data provider, OpenAPI codegen via kubb, real-time list updates over Mercure with per-user JWT, BlockNote editor. |
 | [`worktide-mcp`](https://github.com/Worktide-IO/worktide-mcp) | Standalone MCP server in Node/TypeScript. 18 tools across tasks, projects, time and identity — Claude Code, Claude Desktop and any other MCP-aware client can read and mutate Worktide via a Personal Access Token. |
 
@@ -39,6 +39,7 @@ The backend is a workspace-scoped, multi-tenant API where every entity stacks th
 - **MCP for AI agents** — 18 tools (task search/create/update/complete/dependency, project board/create/archive, time start/stop/report, identity). Plug it into Claude Code and ask "stop my timer" or "make a subtask of WORK-12".
 - **Sessions + sensible defaults** — "Stay signed in" toggle, idle-logout, active-session list with one-click revocation, per-workspace access-token TTL (strictest membership wins).
 - **awork importer** ships in `worktide` — pull a representative slice via Bearer token, replicate idempotently via `(externalSource, externalId)`.
+- **In-app AI agents, human-in-the-loop** — beyond the MCP server, a pluggable `LlmProviderInterface` + an `AIRecommendation` review seam drive ticket triage, marketing drafts, a research/acquisition agent (missions → clarifying dialog → external search → lead pipeline) and a **universal agent-action layer**: the model plans actions over a capability catalog and one generic executor runs them via the connector registry, with a default-deny `EgressGuard` on every outbound call.
 
 ## Where it's going
 
