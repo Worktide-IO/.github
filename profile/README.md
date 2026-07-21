@@ -8,7 +8,7 @@
 
 A self-hostable hybrid of [awork](https://www.awork.com/), [Redmine](https://www.redmine.org/) and [Confluence](https://www.atlassian.com/software/confluence) — multi-tenant from day one, with polymorphic comments, HMAC-signed webhooks, a granular permission matrix, a BlockNote wiki with revision history, a workspace-wide tag system, real-time updates over Mercure, a built-in CRM, and an MCP server so AI agents can work with your projects.
 
-[**Landing page**](https://worktide-io.github.io/) · [**Backend**](https://github.com/Worktide-IO/worktide) · [**Frontend**](https://github.com/Worktide-IO/worktide-web) · [**MCP**](https://github.com/Worktide-IO/worktide-mcp)
+[**Landing page**](https://worktide-io.github.io/) · [**Backend**](https://github.com/Worktide-IO/worktide) · [**Frontend**](https://github.com/Worktide-IO/worktide-web) · [**Portal**](https://github.com/Worktide-IO/worktide-portal) · [**MCP**](https://github.com/Worktide-IO/worktide-mcp)
 
 </div>
 
@@ -18,8 +18,9 @@ A self-hostable hybrid of [awork](https://www.awork.com/), [Redmine](https://www
 
 | Repo | What |
 |---|---|
-| [`worktide`](https://github.com/Worktide-IO/worktide) | Symfony 8 + API Platform 4 + Doctrine 3 backend. 60+ entities, JWT + Personal-Access-Token auth, HMAC-signed outbound webhooks, granular per-role permission matrix, BlockNote-compatible wiki with revisions, subtasks + 4 dependency types (FS/SS/FF/SF with lag), Doctrine `onFlush` domain event log, Mercure publishing on every CRUD. Human-in-the-loop AI agents (`AIRecommendation` + pluggable `LlmProviderInterface`) and Meilisearch full-text search. |
-| [`worktide-web`](https://github.com/Worktide-IO/worktide-web) | React 19 + Vite + Refine 5 + Tailwind v4 + shadcn/ui SPA. Custom Hydra/JSON-LD data provider, OpenAPI codegen via kubb, real-time list updates over Mercure with per-user JWT, BlockNote editor. |
+| [`worktide`](https://github.com/Worktide-IO/worktide) | Symfony 8 + API Platform 4 + Doctrine 3 backend. 100+ entities, JWT + Personal-Access-Token auth, HMAC-signed outbound webhooks, granular per-role permission matrix, BlockNote-compatible wiki with revisions, subtasks + 4 dependency types (FS/SS/FF/SF with lag), Doctrine `onFlush` domain event log, Mercure publishing on every CRUD. Human-in-the-loop AI agents (`AIRecommendation` + pluggable `LlmProviderInterface`), Meilisearch full-text search, inbound email pipeline with mute rules + auto-reply + Thunderbird-grade conditions. |
+| [`worktide-web`](https://github.com/Worktide-IO/worktide-web) | React 19 + Vite + Refine 5 + Tailwind v4 + shadcn/ui SPA. Custom Hydra/JSON-LD data provider, OpenAPI codegen via kubb, real-time list updates over Mercure with per-user JWT, BlockNote editor, offline mutation queue, i18n (DE/EN). |
+| [`worktide-portal`](https://github.com/Worktide-IO/worktide-portal) | Customer portal SPA — React 19 + Vite, separate API surface (`/v1/portal/*`), feature-gated (tickets, files, agreements, invoices, social approval, newsletters, booking). ROLE_PORTAL isolation, magic-link impersonation. |
 | [`worktide-mcp`](https://github.com/Worktide-IO/worktide-mcp) | Standalone MCP server in Node/TypeScript. 18 tools across tasks, projects, time and identity — Claude Code, Claude Desktop and any other MCP-aware client can read and mutate Worktide via a Personal Access Token. |
 
 ## Architecture in one paragraph
@@ -40,6 +41,9 @@ The backend is a workspace-scoped, multi-tenant API where every entity stacks th
 - **Sessions + sensible defaults** — "Stay signed in" toggle, idle-logout, active-session list with one-click revocation, per-workspace access-token TTL (strictest membership wins).
 - **awork importer** ships in `worktide` — pull a representative slice via Bearer token, replicate idempotently via `(externalSource, externalId)`.
 - **In-app AI agents, human-in-the-loop** — beyond the MCP server, a pluggable `LlmProviderInterface` + an `AIRecommendation` review seam drive ticket triage, marketing drafts, a research/acquisition agent (missions → clarifying dialog → external search → lead pipeline) and a **universal agent-action layer**: the model plans actions over a capability catalog and one generic executor runs them via the connector registry, with a default-deny `EgressGuard` on every outbound call.
+- **Inbound email pipeline** — IMAP/MS Graph/Gmail adapters feed an `InboundEventProcessor` threading engine. Thunderbird-grade mute rules with AND/OR conditions, auto-reply with loop detection, AI ticket suggestion, n8n automation dispatch.
+- **Customer portal** — dedicated SPA with `/v1/portal/*` API surface, `ROLE_PORTAL` firewall isolation, feature gating (15 feature keys per workspace), magic-link impersonation, SLA display.
+- **DDEV-first development** — three DDEV projects (API + SPA + Portal) each with reduced config (no database, Vite auto-starts via `web_extra_daemons`, SSL via ddev-router).
 
 ## Where it's going
 
